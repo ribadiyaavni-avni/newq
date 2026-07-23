@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Offline · NEWQ{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card glass" style="text-align:center">
+    <div class="brand-mark" style="justify-content:center">
+      <div class="logo">Q</div>
+      <h1>NEWQ</h1>
+    </div>
+    <p style="font-size:16px">📡 You're offline</p>
+    <p class="sub" style="margin:0">Check your connection — NEWQ will reconnect
+      automatically as soon as you're back online.</p>
+    <button class="btn" onclick="location.href='/'">Try again</button>
+  </div>
+</div>
+{% endblock %}

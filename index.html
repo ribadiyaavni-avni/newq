@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}NEWQ{% endblock %}
+{% block body %}
+<div class="app" id="app">
+
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar glass">
+    <div class="side-head">
+      <span class="brand">NEWQ</span>
+      <button class="icon-btn install-btn" id="installBtn" title="Install NEWQ app" aria-label="Install app">⬇️</button>
+      <button class="icon-btn" id="themeBtn" title="Toggle dark / light" aria-label="Toggle theme">🌙</button>
+      <button class="icon-btn" id="profileBtn" title="My profile" aria-label="My profile">
+        <span id="myAvatarMini" style="font-size:14px;font-weight:700">?</span>
+      </button>
+    </div>
+
+    <div class="search-row">
+      <span class="search-ico">🔎</span>
+      <input id="searchInput" placeholder="Search messages…" autocomplete="off">
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="chats" role="tab">Chats</button>
+      <button class="tab" data-tab="status" role="tab">Status</button>
+      <button class="tab" data-tab="calls" role="tab">Calls</button>
+    </div>
+
+    <div class="side-list" id="sideList" role="list"></div>
+
+    <div style="display:flex; gap:8px; padding:12px 14px;">
+      <button class="btn ghost small" id="redeemBtn" style="flex:1">🔗 Enter code</button>
+      <button class="btn ghost small" id="newGroupBtn" style="flex:1">👥 New group</button>
+      <button class="btn ghost small" id="newStatusBtn" style="flex:1">✨ Status</button>
+    </div>
+  </aside>
+
+  <!-- ===================== CHAT PANEL ===================== -->
+  <main class="chat-panel glass" id="chatPanel">
+    <div class="chat-welcome" id="chatWelcome">
+      <div>
+        <div class="logo-big">Q</div>
+        <h2>Welcome to NEWQ</h2>
+        <p>Enter a 4-digit connect code from your admin to add contacts,
+           then start chatting, sharing and calling — all end to end over the web.</p>
+      </div>
+    </div>
+
+    <div id="chatView" style="display:none; flex:1; flex-direction:column; min-height:0">
+      <div class="chat-head">
+        <button class="icon-btn back-btn" id="backBtn" aria-label="Back">←</button>
+        <div class="avatar" id="chatAvatar"><span id="chatAvatarTxt"></span><i class="presence-dot"></i></div>
+        <div class="who" id="chatWho">
+          <div class="name" id="chatName"></div>
+          <div class="sub" id="chatSub"></div>
+        </div>
+        <button class="icon-btn" id="audioCallBtn" title="Voice call" aria-label="Voice call">📞</button>
+        <button class="icon-btn" id="videoCallBtn" title="Video call" aria-label="Video call">🎥</button>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="typing-bubble" id="typingBubble"><i></i><i></i><i></i></div>
+      </div>
+
+      <div class="composer glass" id="composer">
+        <div class="attach-preview glass" id="attachPreview">
+          <img id="attachThumb" alt="" style="display:none">
+          <div class="info" id="attachName"></div>
+          <button class="icon-btn" id="attachCancel" aria-label="Remove attachment">✕</button>
+        </div>
+        <div class="emoji-panel glass" id="emojiPanel"></div>
+
+        <button class="icon-btn" id="emojiBtn" title="Emoji" aria-label="Emoji">😊</button>
+        <button class="icon-btn" id="attachBtn" title="Attach media" aria-label="Attach media">📎</button>
+        <input type="file" id="fileInput" hidden
+               accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.csv">
+
+        <textarea id="msgInput" rows="1" placeholder="Type a message"></textarea>
+
+        <div class="record-pill" id="recordPill">
+          <span class="dot"></span> Recording… <span id="recordTime">0:00</span>
+          <button class="icon-btn" id="recordCancel" style="margin-left:auto" aria-label="Cancel recording">🗑️</button>
+        </div>
+
+        <button class="icon-btn accent" id="micBtn" title="Record voice note" aria-label="Record voice note">🎤</button>
+        <button class="icon-btn accent" id="sendBtn" title="Send" aria-label="Send" style="display:none">➤</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- Profile -->
+<div class="overlay" id="profileModal">
+  <div class="modal glass" style="position:relative">
+    <button class="icon-btn close-x" data-close="profileModal" aria-label="Close">✕</button>
+    <h3>My profile</h3>
+    <div style="display:flex; justify-content:center">
+      <label style="cursor:pointer" title="Change photo">
+        <div class="avatar big" id="profileAvatar"><span id="profileAvatarTxt"></span></div>
+        <input type="file" id="avatarInput" hidden accept="image/*">
+      </label>
+    </div>
+    <div class="field"><label>Name</label><input id="profName"></div>
+    <div class="field"><label>About</label><input id="profAbout" maxlength="160"></div>
+    <div class="field"><label>Username</label><input id="profUsername" disabled></div>
+    <details>
+      <summary style="cursor:pointer;color:var(--text-dim);font-size:14px">Change password</summary>
+      <div class="field" style="margin-top:10px"><label>Current password</label>
+        <input id="profPassCur" type="password" autocomplete="current-password"></div>
+      <div class="field" style="margin-top:10px"><label>New password</label>
+        <input id="profPassNew" type="password" autocomplete="new-password"></div>
+    </details>
+    <div class="row">
+      <button class="btn" id="saveProfileBtn">Save changes</button>
+      <button class="btn danger" id="logoutBtn">Sign out</button>
+    </div>
+    <p class="hint" id="notifHint"></p>
+  </div>
+</div>
+
+<!-- Redeem code -->
+<div class="overlay" id="redeemModal">
+  <div class="modal glass" style="position:relative">
+    <button class="icon-btn close-x" data-close="redeemModal" aria-label="Close">✕</button>
+    <h3>Enter connect code</h3>
+    <p class="hint">Type the 4-digit code your admin shared. Everyone who enters the
+      same code is connected and can chat and call each other.</p>
+    <input id="codeInput" inputmode="numeric" maxlength="4" placeholder="• • • •"
+           style="text-align:center; font-size:28px; letter-spacing:12px; font-weight:800">
+    <button class="btn" id="codeSubmitBtn">Connect</button>
+  </div>
+</div>
+
+<!-- New group -->
+<div class="overlay" id="groupModal">
+  <div class="modal glass" style="position:relative">
+    <button class="icon-btn close-x" data-close="groupModal" aria-label="Close">✕</button>
+    <h3>New group</h3>
+    <div class="field"><label>Group name</label><input id="groupName" placeholder="Weekend plans"></div>
+    <label style="font-size:13px;color:var(--text-dim);font-weight:600">Add members</label>
+    <div id="groupMembers" style="max-height:220px; overflow-y:auto"></div>
+    <button class="btn" id="createGroupBtn">Create group</button>
+  </div>
+</div>
+
+<!-- New status -->
+<div class="overlay" id="statusModal">
+  <div class="modal glass" style="position:relative">
+    <button class="icon-btn close-x" data-close="statusModal" aria-label="Close">✕</button>
+    <h3>New status</h3>
+    <p class="hint">Visible to your contacts for 24 hours.</p>
+    <textarea id="statusText" rows="3" maxlength="300" placeholder="What's on your mind?"></textarea>
+    <div class="row">
+      <button class="btn ghost" id="statusMediaBtn">🖼️ Add photo / video</button>
+      <input type="file" id="statusFile" hidden accept="image/*,video/*">
+      <button class="btn" id="postStatusBtn">Post</button>
+    </div>
+    <div class="hint" id="statusFileName"></div>
+  </div>
+</div>
+
+<!-- Status viewer -->
+<div class="overlay" id="statusViewModal">
+  <div class="modal glass status-view" style="position:relative">
+    <button class="icon-btn close-x" data-close="statusViewModal" aria-label="Close" style="z-index:2">✕</button>
+    <div id="statusViewMedia"></div>
+    <div class="status-body">
+      <div class="status-meta">
+        <div class="avatar small" id="svAvatar"><span id="svAvatarTxt"></span></div>
+        <div>
+          <div style="font-weight:700" id="svName"></div>
+          <div style="font-size:12px;color:var(--text-dim)" id="svTime"></div>
+        </div>
+      </div>
+      <div class="status-text" id="svText"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Image lightbox -->
+<div class="overlay lightbox" id="lightbox">
+  <img id="lightboxImg" alt="Full size media">
+</div>
+
+<!-- ===================== CALL OVERLAY ===================== -->
+<div class="overlay call-overlay" id="callOverlay">
+  <div class="call-card glass">
+    <div class="avatar big" id="callAvatar"><span id="callAvatarTxt"></span></div>
+    <div class="call-name" id="callName"></div>
+    <div class="call-state" id="callState">Calling…</div>
+    <div class="call-timer" id="callTimer" style="display:none">00:00</div>
+
+    <div class="videos" id="videoWrap">
+      <video id="remoteVideo" autoplay playsinline></video>
+      <video id="localVideo" autoplay playsinline muted></video>
+    </div>
+    <audio id="remoteAudio" autoplay></audio>
+
+    <!-- incoming controls -->
+    <div class="call-actions" id="incomingActions" style="display:none">
+      <button class="icon-btn accent" id="answerBtn" title="Answer" aria-label="Answer call">📞</button>
+      <button class="icon-btn danger" id="declineBtn" title="Decline" aria-label="Decline call">📵</button>
+    </div>
+    <!-- active controls -->
+    <div class="call-actions" id="activeActions" style="display:none">
+      <button class="icon-btn" id="muteBtn" title="Mute microphone" aria-label="Mute">🎙️</button>
+      <button class="icon-btn" id="camBtn" title="Turn camera off" aria-label="Camera" style="display:none">🎥</button>
+      <button class="icon-btn danger" id="hangupBtn" title="End call" aria-label="End call">📵</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/realtime.js"></script>
+<script src="/static/js/notify.js"></script>
+<script src="/static/js/webrtc.js"></script>
+<script src="/static/js/app.js"></script>
+{% endblock %}

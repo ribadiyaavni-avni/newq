@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Sign in · NEWQ{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card glass">
+    <div class="brand-mark">
+      <div class="logo">Q</div>
+      <h1>NEWQ</h1>
+    </div>
+    <p class="sub">Fast, private messaging and calls.</p>
+
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" autocomplete="username" placeholder="your_username" autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div class="auth-error" id="err" aria-live="polite"></div>
+    <button class="btn" id="loginBtn">Sign in</button>
+    <p class="auth-alt">New to NEWQ? <a href="/signup">Create an account</a></p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  async function doLogin() {
+    const btn = document.getElementById('loginBtn');
+    const err = document.getElementById('err');
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.error || 'Sign-in failed'; return; }
+      location.href = data.user.role === 'admin' ? '/admin' : '/';
+    } catch (e) {
+      err.textContent = 'Could not reach the server. Check your connection.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+{% endblock %}

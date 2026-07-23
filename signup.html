@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Create account · NEWQ{% endblock %}
+{% block body %}
+<div class="auth-wrap">
+  <div class="auth-card glass">
+    <div class="brand-mark">
+      <div class="logo">Q</div>
+      <h1>NEWQ</h1>
+    </div>
+    <p class="sub">Create your account in seconds.</p>
+
+    <div class="field">
+      <label for="display_name">Your name</label>
+      <input id="display_name" autocomplete="name" placeholder="Vishal Patel" autofocus>
+    </div>
+    <div class="field">
+      <label for="username">Username</label>
+      <input id="username" autocomplete="username" placeholder="letters, numbers, _">
+    </div>
+    <div class="field">
+      <label for="password">Password <span style="font-weight:400">(min 8 characters)</span></label>
+      <input id="password" type="password" autocomplete="new-password" placeholder="••••••••">
+    </div>
+    <div class="auth-error" id="err" aria-live="polite"></div>
+    <button class="btn" id="signupBtn">Create account</button>
+    <p class="auth-alt">Already have an account? <a href="/login">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  async function doSignup() {
+    const btn = document.getElementById('signupBtn');
+    const err = document.getElementById('err');
+    err.textContent = '';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: document.getElementById('display_name').value,
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { err.textContent = data.error || 'Sign-up failed'; return; }
+      location.href = '/';
+    } catch (e) {
+      err.textContent = 'Could not reach the server. Check your connection.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  document.getElementById('signupBtn').addEventListener('click', doSignup);
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doSignup(); });
+</script>
+{% endblock %}
