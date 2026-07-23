@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Admin · NEWQ{% endblock %}
+{% block body %}
+<div class="admin-wrap">
+  <div class="admin-head glass">
+    <div class="brand-mark" style="margin:0">
+      <div class="logo" style="width:42px;height:42px;font-size:20px;border-radius:12px">Q</div>
+    </div>
+    <h1>NEWQ Admin</h1>
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+    <a class="btn ghost small" href="/">Open chat</a>
+    <button class="btn danger small" id="logoutBtn">Sign out</button>
+  </div>
+
+  <div class="stat-grid" id="statGrid"></div>
+
+  <div class="admin-section glass">
+    <h2>🔗 Connect codes
+      <button class="btn small" id="newCodeBtn">Generate code</button>
+    </h2>
+    <p class="hint" style="margin-bottom:12px">
+      Share a 4-digit code with people you want to connect. Everyone who enters the
+      same code becomes contacts and can chat and call each other.
+    </p>
+    <table class="admin-table">
+      <thead><tr><th>Code</th><th>Uses</th><th>Status</th><th>Created</th><th></th></tr></thead>
+      <tbody id="codeRows"></tbody>
+    </table>
+  </div>
+
+  <div class="admin-section glass">
+    <h2>👤 Users</h2>
+    <table class="admin-table">
+      <thead><tr><th>User</th><th>Username</th><th>Role</th><th>Presence</th><th>Joined</th></tr></thead>
+      <tbody id="userRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- new code modal -->
+<div class="overlay" id="codeModal">
+  <div class="modal glass" style="position:relative">
+    <button class="icon-btn close-x" data-close="codeModal" aria-label="Close">✕</button>
+    <h3>New connect code</h3>
+    <div class="code-display" id="freshCode">— — — —</div>
+    <p class="hint" style="text-align:center">Share this code. It can be used by up to
+      <span id="freshMax"></span> people.</p>
+    <button class="btn" id="copyCodeBtn">Copy code</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+function esc(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+async function api(url, opts={}) {
+  const res = await fetch(url, Object.assign({headers: opts.body ? {'Content-Type':'application/json'} : undefined}, opts));
+  const data = await res.json().catch(()=>({}));
+  if (res.status === 401 || res.status === 403) { location.href = '/login'; throw new Error('auth'); }
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+async function loadStats() {
+  const s = await api('/api/admin/stats');
+  const items = [
+    [s.users, 'Users'], [s.online, 'Online now'], [s.messages, 'Messages'],
+    [s.groups, 'Groups'], [s.codes, 'Codes'], [s.calls, 'Calls'],
+  ];
+  $('statGrid').innerHTML = items.map(([n, l]) =>
+    `<div class="stat-card glass"><div class="num">${n}</div><div class="lbl">${l}</div></div>`).join('');
+}
+
+async function loadCodes() {
+  const data = await api('/api/admin/codes');
+  $('codeRows').innerHTML = data.codes.map(c => `
+    <tr>
+      <td class="code-cell">${c.code}</td>
+      <td>${c.uses} / ${c.max_uses}</td>
+      <td><span class="pill ${c.active ? 'on' : 'off'}">${c.active ? 'Active' : 'Disabled'}</span></td>
+      <td>${new Date(c.created_at).toLocaleDateString()}</td>
+      <td><button class="btn ghost small" data-toggle="${c.id}">${c.active ? 'Disable' : 'Enable'}</button></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="color:var(--text-dim)">No codes yet — generate one above.</td></tr>';
+  document.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', async () => {
+    await api(`/api/admin/codes/${b.dataset.toggle}/toggle`, { method: 'POST' });
+    loadCodes();
+  }));
+}
+
+async function loadUsers() {
+  const data = await api('/api/admin/users');
+  $('userRows').innerHTML = data.users.map(u => `
+    <tr>
+      <td>${esc(u.display_name)}</td>
+      <td>@${esc(u.username)}</td>
+      <td><span class="pill">${u.role}</span></td>
+      <td><span class="pill ${u.online ? 'on' : 'off'}">${u.online ? 'Online' : 'Offline'}</span></td>
+      <td>${new Date(u.created_at).toLocaleDateString()}</td>
+    </tr>`).join('');
+}
+
+$('newCodeBtn').addEventListener('click', async () => {
+  try {
+    const data = await api('/api/admin/codes', { method: 'POST', body: JSON.stringify({ max_uses: 10 }) });
+    $('freshCode').textContent = data.code.code.split('').join(' ');
+    $('freshMax').textContent = data.code.max_uses;
+    $('copyCodeBtn').onclick = () => {
+      navigator.clipboard.writeText(data.code.code).then(() => toast('Code copied 📋'));
+    };
+    $('codeModal').classList.add('show');
+    loadCodes();
+    loadStats();
+  } catch (e) { toast(e.message); }
+});
+
+document.querySelectorAll('[data-close]').forEach(b =>
+  b.addEventListener('click', () => $(b.dataset.close).classList.remove('show')));
+document.querySelectorAll('.overlay').forEach(o =>
+  o.addEventListener('click', (e) => { if (e.target === o) o.classList.remove('show'); }));
+
+$('logoutBtn').addEventListener('click', async () => {
+  await api('/api/logout', { method: 'POST' });
+  location.href = '/login';
+});
+
+// theme toggle
+(function () {
+  const btn = $('themeBtn');
+  const apply = () => {
+    btn.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☀️' : '🌙';
+  };
+  btn.addEventListener('click', () => {
+    const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('newq-theme', next);
+    apply();
+  });
+  apply();
+})();
+
+loadStats(); loadCodes(); loadUsers();
+setInterval(() => { loadStats(); loadUsers(); }, 15000);
+</script>
+{% endblock %}
